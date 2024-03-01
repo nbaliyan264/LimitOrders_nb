@@ -15,5 +15,9 @@ public class LimitOrderAgentTest {
     	
     	agent.addOrder("buy", "1234", 1000, 100);
     	agent.priceTick("1234", BigDecimal.valueOf(1000));
-    }
+    	
+		/*
+		 * Using Mockito we can verify the calls for void methods. Like
+		 * Mockito.verify(agent.addOrder("buy", "1234", 1000, 100), Mockito.times(1));
+		 */    }
 }

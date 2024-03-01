@@ -5,14 +5,13 @@ import org.afob.execution.ExecutionClient.ExecutionException;
 import org.afob.prices.PriceListener;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LimitOrderAgent implements PriceListener {
 
-	String prodId;
-	BigDecimal currentPrice;
 	ExecutionClient execution;
+    Map<String, Order> mapOrder = new HashMap<>();
 	
     public LimitOrderAgent(final ExecutionClient ec) {
     	execution = ec;
@@ -20,35 +19,37 @@ public class LimitOrderAgent implements PriceListener {
  
     @Override
     public void priceTick(String productId, BigDecimal price) {
-    	prodId = productId;
-    	currentPrice = price;
+    	Order order = mapOrder.get(productId);
+    	
+    	if(order.getFlag().equals("buy")) {
+    		if(order.getLimit() <= price.doubleValue()) {
+    			try {
+					execution.buy(order.getProductId(), order.getAmount());
+				} catch (ExecutionException e) {
+					e.printStackTrace();
+				}
+        	}
+    	} else {
+    		if(order.getLimit() >= price.doubleValue()) {
+    			try {
+					execution.sell(order.getProductId(), order.getAmount());
+				} catch (ExecutionException e) {
+					e.printStackTrace();
+				}
+        	}
+    	}
     }
     
-	List<Order> orders = new ArrayList<>();
-	
-    public List<Order> addOrder(String flag, String productId, int amount, int limit) throws ExecutionException {
+    public void addOrder(String flag, String productId, int amount, int limit) throws ExecutionException {
     	Order order = new Order();
     	
     	order.setAmount(amount);
     	order.setProductId(productId);
     	order.setFlag(flag);
-    	order.setLimit(limit);
+    	order.setLimit(limit);   	    	
     	
-    	orders.add(order);
-    	
-		return orders;	
+    	mapOrder.put(productId, order);
+	
     }
-    
-    public void executeOrder(Order order) throws ExecutionException {    	
-    	if(order.getFlag().equals("buy")) {
-    		if(order.getLimit() <= currentPrice.doubleValue()) {
-    			execution.buy(order.getProductId(), order.getAmount());
-        	}
-    	} else {
-    		if(order.getLimit() >= currentPrice.doubleValue()) {
-    			execution.sell(order.getProductId(), order.getAmount());
-        	}
-    	}
-    }
-
+ 
 }
